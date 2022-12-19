@@ -31,9 +31,11 @@ import {
 } from 'react-native/Libraries/NewAppScreen';
 import GlobalProvider from './src/context/Provider';
 import DocumentPicker from 'react-native-document-picker';
-import DocumentScanner from 'react-native-document-scanner-plugin';
+import DocumentScanner, { ResponseType } from 'react-native-document-scanner-plugin';
 // import ImagePicker from 'react-native-image-picker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import ImgToBase64 from 'react-native-image-base64';
+import SelectDropdown from 'react-native-select-dropdown'
 // import Pdf from 'react-native-pdf';
 // import PSPDFKitView from 'react-native-pspdfkit';
 
@@ -68,7 +70,8 @@ const Section = ({ children, title }): Node => {
 const App: () => Node = () => {
   const isDarkMode = useColorScheme() === 'dark';
   const [filePDF, setFilePDF] = useState(null);
-  const [scannedImage, setScannedImage] = useState();
+  const [scannedImage, setScannedImage] = useState([]);
+  // const [scannedImage2, setScannedImage2] = useState();
   const [imageUpload, setImageUpload] = useState();
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
@@ -79,17 +82,38 @@ const App: () => Node = () => {
     marginTop: 16
   };
   let CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/duwneyezm/upload';
-  
+
   const scanDocument = async () => {
     // start the document scanner
     const { scannedImages } = await DocumentScanner.scanDocument({
-      responseType: "base64"
+      // responseType: ResponseType["Base64"]
     })
-
     // get back an array with scanned image file paths
     if (scannedImages.length > 0) {
-      // set the img src, so we can view the first scanned image
-      setScannedImage(scannedImages[0])
+      ImgToBase64.getBase64String(`${scannedImages[0]}`)
+        .then(base64String => {
+          let base64Img = `data:image/jpg;base64,${base64String}`;
+          let data = {
+            "file": base64Img,
+            "upload_preset": "app_scan",
+          };
+          fetch(CLOUDINARY_URL, {
+            body: JSON.stringify(data),
+            headers: {
+              'content-type': 'application/json'
+            },
+            method: 'POST',
+          }).then(async r => {
+            let data = await r.json();
+
+            // setImageUpload(data.url)
+            //Here I'm using another hook to set State for the photo that we get back //from Cloudinary
+            // console.log("clo",data.url )
+            setScannedImage([...scannedImage, data.url])
+            // setPhoto(data.url);
+          }).catch(err => console.log(err))
+        })
+        .catch(err => console.log(err));
     }
   }
   //allows user to upload a photo
@@ -97,51 +121,19 @@ const App: () => Node = () => {
   //asks phone for permission to access photos
 
   const uploadImage = async () => {
-    // let permissionResult = await ImagePicker.requestCameraRollPermissionsAsync();
-
-    //this tells the application to give an alert if someone doesn't allow //permission.  It will return to the previous screen.
-
-    // if (permissionResult.granted === false) {
-    //   alert('Permission to access camera roll is required!');
-    //   return;
-    // }
-
-    //This gets image from phone
-
     let pickerResult = await launchImageLibrary({
       mediaType: "photo",
       includeBase64: true,
       //We need the image to be base64 in order to be formatted for Cloudinary
     });
-    console.log("anh", (pickerResult.assets[0].base64).slice(0, 10))
-    //this just returns the user to the previous page if they click "cancel"
-
-    // if (pickerResult.cancelled === true) {
-    //   return;
-    // }
-
-    //sets image from imagePicker to SelectedImage.
-    //This is if you are using hooks. The hook for this I have set up as:
-    //[selectedImage, setSelectedImage] = useState("").  If you're using //anclass component you can use setState here.  This file format will be
-    //a file path to where the image is saved.  
-
-    // setScannedImage(pickerResult[0].uri);
-
-    //***IMPORTANT*** This step is necessary.  It converts image from //file path format that imagePicker creates, into a form that cloudinary //requires. 
-    //data:image/jpg;base64,
     let base64Img = `data:image/jpg;base64,${pickerResult.assets[0].base64}`;
 
     // Here we need to include your Cloudinary upload preset with can be //found in your Cloudinary dashboard. 
-
     let data = {
       "file": base64Img,
       "upload_preset": "app_scan",
     }
-
     //sends photo to cloudinary
-    //**I initially tried using an axios request but it did NOT work** I was 
-    //not able to get this to work until I changed it to a fetch request.
-
     fetch(CLOUDINARY_URL, {
       body: JSON.stringify(data),
       headers: {
@@ -150,11 +142,8 @@ const App: () => Node = () => {
       method: 'POST',
     }).then(async r => {
       let data = await r.json()
-      console.log("clo", data.url)
-      setImageUpload(data.url)
-      //Here I'm using another hook to set State for the photo that we get back //from Cloudinary
-      // console.log("clo",data.url )
-      // setPhoto(data.url);
+      // console.log("clo", data.url)
+      setScannedImage([...scannedImage, data.url])
     }).catch(err => console.log(err))
   };
   const uploadPDF = async () => {
@@ -178,7 +167,11 @@ const App: () => Node = () => {
       }
     }
   }
-  console.log("file", filePDF)
+  console.log(scannedImage)
+
+
+
+  const typeUpImage = ["UPLOAD IMAGES", "SCAN DOCUMENT"]
   return (
     <GlobalProvider >
       <SafeAreaView style={backgroundStyle}>
@@ -241,35 +234,83 @@ const App: () => Node = () => {
 
           {/* Scan or upload Image or pdf */}
           <View style={styles.action}>
+            {/* Upload file pdf */}
             <View style={styles.container}>
-              <Button
+              {/* <TouchableOpacity
+                style={styles.btn}
                 onPress={uploadPDF}
+                color="#16a5e1"
+
                 title="Upload PDF Document"
-              />
+              > */}
+                <TouchableOpacity
+                  onPress={uploadPDF}
+                  style={styles.btn}
+                  >
+                  <Text style={styles.textSelect}>UPLOAD PDF</Text>
+                </TouchableOpacity>
             </View>
-            <View style={styles.container}>
-              <Button
-                onPress={uploadImage}
-                title="Upload Image"
-              />
-            </View>
-            <View style={styles.container}>
-              <Button
-                onPress={scanDocument}
-                title="Scan Document"
-              />
-            </View>
+            {/* Upload image or scan  */}
+            {/* <View>
+              <View style={styles.container}>
+                <Button
+                  onPress={uploadImage}
+                  title="Upload Image"
+                />
+              </View>
+              <View style={styles.container}>
+                <Button
+                  onPress={scanDocument}
+                  title="Scan Document"
+                />
+              </View>
+            </View> */}
+            <SelectDropdown
+              data={typeUpImage}
+              onSelect={(selectedItem, index) => {
+                if (index == 0) {
+                  uploadImage()
+                }
+                if (index == 1) {
+                  scanDocument()
+                }
+              }}
+              buttonTextAfterSelection={(selectedItem, index) => {
+                // text represented after item is selected
+                // if data array is an array of objects then return selectedItem.property to render after item is selected
+                return selectedItem
+              }}
+              rowTextForSelection={(item, index) => {
+                // text represented for each item in dropdown
+                // if data array is an array of objects then return item.property to represent item in dropdown
+                return item
+              }}
+              renderDropdownIcon={(selectedItem, index) => {
+
+              }}
+              dropdownIconPosition="right"
+              buttonStyle={styles.btnSelect}
+              buttonTextStyle={styles.textSelect}
+            />
           </View>
 
           <View>
             {filePDF && <Text>{filePDF}</Text>}
           </View>
-
-          <View>
-            <Image source={{ uri: imageUpload }} style={{ width: 150, height: 150 }} />
+          <View style={styles.viewImages}>
+            {
+              (scannedImage && scannedImage.length > 0) ? (
+                scannedImage.map((itemI, index) => {
+                  console.log("itemI", itemI)
+                  return (
+                    <View key={index}>
+                      <Image source={{ uri: `${itemI}` }} style={{ width: 150, height: 150 }} />
+                    </View>
+                  )
+                })
+              ) : null
+            }
           </View>
-
-
         </ScrollView>
       </SafeAreaView>
     </GlobalProvider>
@@ -295,8 +336,8 @@ const styles = StyleSheet.create({
     marginTop: 5
   },
   action: {
-    marginTop: 16,
-    display: "flex",
+    marginTop: 48,
+    flexDirection: "row",
     justifyContent: "space-around"
   },
   container: {
@@ -304,7 +345,7 @@ const styles = StyleSheet.create({
     // flex: 1,
     // justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5FCFF',
+    // backgroundColor: '#F5FCFF',
   },
   textInput: {
     flex: 1,
@@ -329,6 +370,27 @@ const styles = StyleSheet.create({
   highlight: {
     fontWeight: '700',
   },
+  btn: {
+    paddingLeft: 24,
+    paddingBottom: 14,
+    paddingTop: 14,
+    paddingRight: 24,
+    fontSize: 18,
+    backgroundColor: "#16a5e1",
+  },
+  btnSelect: {
+    backgroundColor: "#16a5e1",
+  },
+  textSelect: {
+    color: "white",
+    fontSize: 18
+  },
+  viewImages: {
+    marginTop: 24,
+    flexDirection: "row",
+    paddingLeft: 16,
+    paddingRight: 16
+  }
 });
 
 export default App;
