@@ -78,7 +78,7 @@ const App: () => Node = () => {
   const [year, setYear] = useState("");
 
   const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+    backgroundColor: Colors.white,
     marginTop: 16
   };
   let CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/duwneyezm/upload';
@@ -167,10 +167,6 @@ const App: () => Node = () => {
       }
     }
   }
-  console.log(scannedImage)
-
-
-
   const typeUpImage = ["UPLOAD IMAGES", "SCAN DOCUMENT"]
   return (
     <GlobalProvider >
@@ -182,13 +178,12 @@ const App: () => Node = () => {
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           style={backgroundStyle}>
-          <Header />
+          {/* <Header /> */}
+          <Text style={styles.titleHeader}>App Scan</Text>
           {/* Thong tin chung */}
-          <View style={styles.bodyApp}>
+          <View>
             <View
-              style={{
-                backgroundColor: isDarkMode ? Colors.black : Colors.white,
-              }}>
+              style={styles.bodyApp}>
               <Text style={[styles.lable]}>Title</Text>
               <View style={[
                 styles.wrapper,
@@ -201,9 +196,7 @@ const App: () => Node = () => {
               </View>
             </View>
             <View
-              style={{
-                backgroundColor: isDarkMode ? Colors.black : Colors.white,
-              }}>
+              style={styles.bodyApp}>
               <Text style={[styles.lable]}>Author</Text>
               <View style={[
                 styles.wrapper,
@@ -216,9 +209,7 @@ const App: () => Node = () => {
               </View>
             </View>
             <View
-              style={{
-                backgroundColor: isDarkMode ? Colors.black : Colors.white,
-              }}>
+              style={styles.bodyApp}>
               <Text style={[styles.lable]}>Year</Text>
               <View style={[
                 styles.wrapper
@@ -234,38 +225,24 @@ const App: () => Node = () => {
 
           {/* Scan or upload Image or pdf */}
           <View style={styles.action}>
-            {/* Upload file pdf */}
             <View style={styles.container}>
-              {/* <TouchableOpacity
-                style={styles.btn}
-                onPress={uploadPDF}
-                color="#16a5e1"
-
-                title="Upload PDF Document"
-              > */}
                 <TouchableOpacity
-                  onPress={uploadPDF}
+                  onPress={uploadImage}
                   style={styles.btn}
                   >
-                  <Text style={styles.textSelect}>UPLOAD PDF</Text>
+                  <Text style={styles.textSelect}>UPLOAD IMAGES</Text>
                 </TouchableOpacity>
             </View>
-            {/* Upload image or scan  */}
-            {/* <View>
-              <View style={styles.container}>
-                <Button
-                  onPress={uploadImage}
-                  title="Upload Image"
-                />
-              </View>
-              <View style={styles.container}>
-                <Button
+            <View style={styles.container}>
+                <TouchableOpacity
                   onPress={scanDocument}
-                  title="Scan Document"
-                />
-              </View>
-            </View> */}
-            <SelectDropdown
+                  style={styles.btn}
+                  >
+                  <Text style={styles.textSelect}>SCAN DOCUMENTS</Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* <SelectDropdown
               data={typeUpImage}
               onSelect={(selectedItem, index) => {
                 if (index == 0) {
@@ -291,11 +268,7 @@ const App: () => Node = () => {
               dropdownIconPosition="right"
               buttonStyle={styles.btnSelect}
               buttonTextStyle={styles.textSelect}
-            />
-          </View>
-
-          <View>
-            {filePDF && <Text>{filePDF}</Text>}
+            /> */}
           </View>
           <View style={styles.viewImages}>
             {
@@ -318,10 +291,16 @@ const App: () => Node = () => {
 };
 
 const styles = StyleSheet.create({
+  titleHeader: {
+    textAlign: "center",
+    fontSize: 40,
+    fontWeight: '900'
+  },
   bodyApp: {
-    marginLeft: 16,
-    marginTop: 16,
-    marginRight: 16
+    paddingLeft: 16,
+    paddingTop: 16,
+    paddingRight: 16,
+    backgroundColor: Colors.white,
   },
   lable: {
     fontSize: 20,
@@ -338,7 +317,8 @@ const styles = StyleSheet.create({
   action: {
     marginTop: 48,
     flexDirection: "row",
-    justifyContent: "space-around"
+    justifyContent: "space-around",
+    backgroundColor: Colors.white,
   },
   container: {
 
@@ -371,10 +351,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   btn: {
-    paddingLeft: 24,
+    paddingLeft: 14,
     paddingBottom: 14,
     paddingTop: 14,
-    paddingRight: 24,
+    paddingRight: 14,
     fontSize: 18,
     backgroundColor: "#16a5e1",
   },
